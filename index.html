@@ -1,0 +1,1142 @@
+<title>Alondra Children's Nursing</title>
+
+<!-- Tipografía: Bricolage para titulares, Figtree para el texto, Plex Mono para datos -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* ============================================================
+   TOKENS
+   Layout: foto a toda anchura arriba, luego una columna de lectura
+   de ~68ch. Cabecera fija con los enlaces a la derecha.
+   Tema claro: fondo rosa pastel y toda la tipografía en azul.
+   Los azules están comprobados sobre el rosa, el más claro llega
+   a 5:1 de contraste, por encima del mínimo accesible de 4,5:1.
+   ============================================================ */
+:root{
+  --bg:      #f6e3e1;   /* rosa pastel cálido, fondo de toda la página */
+  --surface: #fdf5f4;   /* rosa casi blanco para tarjetas */
+  --line:    #e6cdca;   /* filetes */
+  --fg:      #1e3a57;   /* azul profundo, texto principal */
+  --muted:   #44637f;   /* azul medio, texto secundario */
+  --accent:  #2f6690;   /* azul vivo, para lo que debe destacar */
+
+  /* Colores de estado, separados del azul de marca */
+  --abierto: #2f6a4f;   /* verde, la clínica está atendiendo */
+  --cerrado: #9b3b3b;   /* rojo apagado, fuera de horario */
+
+  /* Dos sombras: una de apoyo y otra más profunda para lo elevado */
+  --sombra:  0 1px 2px rgba(30,58,87,.05), 0 10px 28px -16px rgba(30,58,87,.28);
+  --sombra-alta: 0 2px 4px rgba(30,58,87,.06), 0 18px 40px -20px rgba(30,58,87,.38);
+
+  --radio: 16px;
+
+  --font-titulo: 'Bricolage Grotesque', Georgia, serif;
+  --font-texto:  'Figtree', system-ui, -apple-system, sans-serif;
+  --font-dato:   'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --header-h: 64px;     /* alto de la cabecera fija, se reutiliza abajo */
+  --maxw: 68ch;         /* ancho cómodo de lectura */
+  --anchow: 1080px;     /* ancho máximo de los bloques anchos, como la foto */
+
+  /* La página se queda siempre en claro, aunque el sistema esté en oscuro */
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------
+   BASE
+   ------------------------------------------------------------ */
+*{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-texto);
+  font-size: 1.02rem;
+  line-height: 1.75;
+  padding-top: var(--header-h);   /* hueco para la cabecera fija */
+
+  /* Dos halos muy suaves rompen el plano del fondo sin llamar la atención */
+  background:
+    radial-gradient(900px 420px at 15% -5%,  rgba(47,102,144,.10), transparent 70%),
+    radial-gradient(700px 380px at 95% 12%,  rgba(255,255,255,.55), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* El scroll suave es lo que hace que los enlaces viajen en vez de saltar */
+html{ scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior: auto; }
+  *{ animation: none !important; transition-duration: .01ms !important; }
+}
+
+h1,h2,h3{
+  font-family: var(--font-titulo);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+a{ color: inherit; }
+
+:focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------------------
+   CABECERA FIJA CON LOS ENLACES A LA DERECHA
+   ------------------------------------------------------------ */
+header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  min-height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .7rem 1.5rem;
+  padding-top: calc(.7rem + env(safe-area-inset-top, 0px));  /* notch del móvil */
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(1.3);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.marca{
+  font-family: var(--font-titulo);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+nav{
+  display: flex;
+  gap: .2rem;
+  overflow-x: auto;        /* si no caben, se deslizan en vez de romper la página */
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar{ display: none; }
+
+nav a{
+  text-decoration: none;
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: .3rem .75rem;
+  border-radius: 999px;
+  transition: color .22s ease, background-color .22s ease;
+}
+nav a:hover{ color: var(--fg); background: color-mix(in srgb, var(--surface) 75%, transparent); }
+
+/* Estado activo: lo pone y lo quita el IntersectionObserver de abajo */
+nav a.activo{
+  color: var(--surface);
+  background: var(--accent);
+}
+
+/* ------------------------------------------------------------
+   FOTO DE PORTADA
+   Es lo primero que se ve. Cambia el src por tu imagen y ya está,
+   el recorte lo resuelve object-fit sea cual sea su proporción.
+   ------------------------------------------------------------ */
+.portada{
+  max-width: var(--anchow);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  padding-block: 1.75rem 0;
+}
+
+.portada img{
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;    /* alto estable mientras carga la imagen */
+  object-fit: cover;       /* recorta sin deformar */
+  object-position: center;
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: var(--sombra-alta);
+}
+
+/* ------------------------------------------------------------
+   INDICADOR DE ABIERTO O CERRADO
+   El texto y el color los calcula el reloj del visitante.
+   ------------------------------------------------------------ */
+.estado{
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  margin-top: 1.4rem;
+  padding: .35rem .85rem .35rem .7rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--sombra);
+  font-family: var(--font-dato);
+  font-size: .78rem;
+  font-weight: 500;
+}
+.punto{
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.estado.abierto{ color: var(--abierto); }
+.estado.abierto .punto{ animation: latido 2.6s ease-in-out infinite; }
+.estado.cerrado{ color: var(--cerrado); }
+
+@keyframes latido{
+  0%,100%{ box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  70%    { box-shadow: 0 0 0 6px transparent; opacity: .7; }
+}
+
+/* ------------------------------------------------------------
+   SECCIONES
+   ------------------------------------------------------------ */
+section{
+  /* CLAVE: evita que la cabecera fija tape el título al llegar */
+  scroll-margin-top: calc(var(--header-h) + 1.5rem);
+
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  padding-block: clamp(3rem, 8vw, 4.75rem);
+}
+section + section{ border-top: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+
+section h2{
+  font-size: clamp(1.55rem, 4vw, 2.05rem);
+  margin-bottom: .7rem;
+}
+section p{ color: var(--muted); max-width: 62ch; }
+section p strong{ color: var(--fg); font-weight: 600; }
+
+.lede{ font-size: 1.1rem; }
+
+#accueil{ padding-block: clamp(2rem, 5vw, 2.8rem) clamp(3rem, 8vw, 4.75rem); }
+#accueil h1{
+  font-size: clamp(2rem, 6vw, 2.9rem);
+  margin-bottom: .9rem;
+}
+
+/* ------------------------------------------------------------
+   TARJETAS DE "POURQUOI"
+   ------------------------------------------------------------ */
+.rejilla{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-top: 1.9rem;
+}
+.tarjeta{
+  min-width: 0;                  /* deja que el texto largo se ajuste dentro */
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  padding: 1.25rem;
+  box-shadow: var(--sombra);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.tarjeta:hover{ transform: translateY(-3px); box-shadow: var(--sombra-alta); }
+.tarjeta h3{ font-size: 1.05rem; margin-bottom: .35rem; }
+.tarjeta p{ font-size: .93rem; margin: 0; }
+
+.cifra{
+  display: block;
+  font-family: var(--font-dato);
+  font-size: .76rem;
+  color: var(--accent);
+  margin-bottom: .5rem;
+}
+
+/* ------------------------------------------------------------
+   PASOS DE "COMMENT"
+   Aquí el número sí es información, el orden importa.
+   ------------------------------------------------------------ */
+.pasos{
+  list-style: none;
+  counter-reset: paso;
+  margin: 1.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+.pasos li{
+  counter-increment: paso;
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  gap: 1.1rem;
+  align-items: start;
+}
+.pasos li::before{
+  content: counter(paso);
+  display: grid;
+  place-items: center;
+  width: 2.4rem; height: 2.4rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sombra);
+  font-family: var(--font-dato);
+  font-size: .9rem;
+  color: var(--accent);
+}
+.pasos h3{ font-size: 1.02rem; margin-bottom: .1rem; }
+.pasos p{ font-size: .93rem; margin: 0; }
+.pasos div{ min-width: 0; }
+
+/* ------------------------------------------------------------
+   FILTRO POR EDAD
+   Botones que esconden o muestran servicios sin recargar nada.
+   ------------------------------------------------------------ */
+.filtro{
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: 1.9rem 0 1.1rem;
+}
+.filtro button{
+  font-family: var(--font-texto);
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .35rem .95rem;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.filtro button:hover{ color: var(--fg); border-color: var(--accent); }
+.filtro button[aria-pressed="true"]{
+  color: var(--surface);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Se usa para esconder lo que el filtro descarta */
+.oculto{ display: none !important; }
+
+#no-results{
+  font-family: var(--font-dato);
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------
+   DESPLEGABLES
+   details y summary ya traen la lógica de abrir y cerrar.
+   ------------------------------------------------------------ */
+.desplegable{
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  margin-bottom: .65rem;
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.desplegable summary{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .9rem 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;        /* quita el triangulito por defecto */
+}
+.desplegable summary::-webkit-details-marker{ display: none; }
+
+.desplegable summary::after{
+  content: "+";
+  font-family: var(--font-dato);
+  font-size: 1.25rem;
+  color: var(--accent);
+  flex: none;
+  transition: transform .28s ease;
+}
+.desplegable[open] summary::after{ transform: rotate(45deg); }  /* la cruz se vuelve aspa */
+
+.desplegable .cuerpo{
+  padding: 0 1.15rem 1.15rem;
+  color: var(--muted);
+  font-size: .93rem;
+}
+.desplegable .meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1.2rem;
+  margin-top: .7rem;
+  font-family: var(--font-dato);
+  font-size: .76rem;
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------
+   TARIFAS
+   ------------------------------------------------------------ */
+.tabla{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.6rem;
+  font-size: .94rem;
+}
+.tabla th{
+  text-align: left;
+  font-family: var(--font-dato);
+  font-size: .74rem;
+  font-weight: 500;
+  color: var(--muted);
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--line);
+}
+.tabla td{
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.tabla td:first-child{ color: var(--fg); font-weight: 500; }
+.tabla td:last-child, .tabla th:last-child{
+  text-align: right;
+  font-family: var(--font-dato);
+  font-variant-numeric: tabular-nums;
+}
+.tabla tr.hoy td{ color: var(--fg); font-weight: 600; }
+.tabla tr.hoy td:first-child::before{ content: "▸ "; color: var(--accent); }
+
+/* ------------------------------------------------------------
+   FORMULARIO DE CITA
+   ------------------------------------------------------------ */
+form{
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.7rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-alta);
+}
+.campo{ display: grid; gap: .35rem; min-width: 0; }
+.campo label{ font-size: .85rem; font-weight: 600; }
+
+input, select, textarea{
+  font-family: var(--font-texto);
+  font-size: .95rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: .6rem .75rem;
+  width: 100%;
+  min-width: 0;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+input:focus, select:focus, textarea:focus{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47,102,144,.14);
+}
+textarea{ resize: vertical; min-height: 80px; }
+
+/* Dos campos por fila cuando hay sitio */
+.pareja{ display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 480px){ .pareja{ grid-template-columns: 1fr; } }
+
+.aviso{
+  font-family: var(--font-dato);
+  font-size: .8rem;
+  color: var(--cerrado);
+  min-height: 1.2em;        /* reserva el hueco para que nada salte */
+  margin: 0;
+}
+.aviso a{ color: var(--accent); }
+
+/* Campo trampa para robots: invisible para personas, lo rellenan los bots */
+.trampa{
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+button[type="submit"]{
+  font-family: var(--font-texto);
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--surface);
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  padding: .75rem 1.4rem;
+  cursor: pointer;
+  justify-self: start;
+  box-shadow: var(--sombra);
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+button[type="submit"]:hover:not(:disabled){
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-alta);
+}
+button[type="submit"]:disabled{ opacity: .6; cursor: progress; }
+
+/* Resumen que se va rellenando mientras se escribe */
+.resumen{
+  margin-top: 1.1rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radio);
+  font-family: var(--font-dato);
+  font-size: .82rem;
+  color: var(--muted);
+  line-height: 1.95;
+}
+.resumen b{ color: var(--fg); font-weight: 500; }
+
+.confirmacion{
+  margin-top: 1.1rem;
+  padding: 1.2rem 1.3rem;
+  background: var(--surface);
+  border: 1px solid var(--abierto);
+  border-radius: var(--radio);
+  color: var(--abierto);
+  font-size: .95rem;
+  box-shadow: var(--sombra);
+}
+
+.contacto{
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.75rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-dato);
+  font-size: .86rem;
+  color: var(--muted);
+}
+.contacto span{ user-select: all; }   /* un clic selecciona el dato entero */
+
+footer{
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding: 1.75rem 1.5rem 3.5rem;
+  font-size: .82rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+/* Cabecera en dos filas cuando no caben marca y menú en la misma */
+@media (max-width: 680px){
+  :root{ --header-h: 94px; }
+  header{ flex-direction: column; align-items: flex-start; gap: .3rem; padding-inline: 1.25rem; }
+  nav{ width: 100%; margin-left: -.75rem; }
+}
+</style>
+
+<!-- ============================================================
+     CABECERA FIJA
+     Cada href apunta al id de su sección. Con scroll-behavior:smooth
+     y scroll-margin-top el navegador hace el recorrido él solo.
+     ============================================================ -->
+<header>
+  <a class="marca" href="#accueil">Alondra</a>
+
+  <nav id="menu" aria-label="Page sections">
+    <a href="#accueil">Accueil</a>
+    <a href="#pourquoi">Pourquoi</a>
+    <a href="#comment">Comment</a>
+    <a href="#contact">Contact et tarifs</a>
+    <a href="#annexe">Annexe</a>
+  </nav>
+</header>
+
+<!-- ============================================================
+     FOTO DE PORTADA
+     SUSTITUYE el src por el de tu imagen, por ejemplo src="foto.jpg"
+     con el archivo junto al index.html. Lo demás no hay que tocarlo.
+     ============================================================ -->
+<div class="portada">
+  <img id="portada"
+       alt="Waiting room with low armchairs and a shelf of picture books"
+       src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'><rect width='1600' height='900' fill='%23fdf5f4'/><g fill='none' stroke='%232f6690' stroke-width='3' opacity='.8'><rect x='660' y='350' width='280' height='200' rx='12'/><circle cx='800' cy='432' r='40'/><path d='M660 520l90-70 70 55 60-45 60 60'/></g><text x='800' y='630' text-anchor='middle' font-family='monospace' font-size='30' fill='%2344637f'>replace the src with your photo</text></svg>">
+</div>
+
+<main>
+
+  <!-- ===================== 1. ACCUEIL ===================== -->
+  <section id="accueil">
+    <h1>Children's nursing care, with time to explain first.</h1>
+    <p class="lede">
+      Alondra is a small nursing practice for children from birth to fourteen.
+      Vaccinations, wound care, blood draws and growth checks, done at the pace
+      the child needs rather than the pace of a waiting list.
+    </p>
+
+    <!-- El estado lo calcula el reloj del visitante, ver JavaScript -->
+    <p class="estado" id="estado">
+      <span class="punto"></span><span id="estado-texto">Checking opening hours</span>
+    </p>
+  </section>
+
+  <!-- ===================== 2. POURQUOI ===================== -->
+  <section id="pourquoi">
+    <h2>Why families come here</h2>
+    <p>
+      Most of our families arrive after a visit somewhere else that went badly.
+      <strong>A frightened child is not an awkward patient, it is a sign nobody explained things.</strong>
+      So we build the appointment around that.
+    </p>
+
+    <div class="rejilla">
+      <article class="tarjeta">
+        <span class="cifra">20 min</span>
+        <h3>Appointments that are not rushed</h3>
+        <p>Every slot lasts at least twenty minutes, so there is room to stop, breathe and start again.</p>
+      </article>
+      <article class="tarjeta">
+        <span class="cifra">4 nurses</span>
+        <h3>The same faces each visit</h3>
+        <p>You can ask for the nurse your child already knows. Continuity does most of the work for us.</p>
+      </article>
+      <article class="tarjeta">
+        <span class="cifra">No queue</span>
+        <h3>Booked times, not waiting rooms</h3>
+        <p>We schedule in fixed slots, so nobody spends forty minutes getting more nervous in a corridor.</p>
+      </article>
+      <article class="tarjeta">
+        <span class="cifra">Open file</span>
+        <h3>Notes you can take home</h3>
+        <p>You leave with a printed summary of what we did and what to watch for over the next days.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== 3. COMMENT ===================== -->
+  <section id="comment">
+    <h2>How a visit works</h2>
+    <p>Four steps, from the first message to the follow up call.</p>
+
+    <ol class="pasos">
+      <li>
+        <div>
+          <h3>Tell us what you need</h3>
+          <p>Send the booking form at the bottom of this page or call us. We answer the same working day.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>We prepare the room before you arrive</h3>
+          <p>Anaesthetic cream, the right needle size and, when it helps, a short illustrated story about what is coming.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>The appointment itself</h3>
+          <p>A parent stays in the room the whole time. The child decides which arm, and we never hold a child down by surprise.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>We check in afterwards</h3>
+          <p>A short call the next day for vaccinations and wound care, and a printed summary for your paediatrician.</p>
+        </div>
+      </li>
+    </ol>
+
+    <h3 style="margin-top:2.5rem">What we do</h3>
+    <!-- Los botones esconden las fichas que no llevan esa edad en data-ages -->
+    <div class="filtro" id="filtro" role="group" aria-label="Filter services by age">
+      <button type="button" data-age="all"     aria-pressed="true">All ages</button>
+      <button type="button" data-age="baby"    aria-pressed="false">0 to 2</button>
+      <button type="button" data-age="child"   aria-pressed="false">3 to 6</button>
+      <button type="button" data-age="older"   aria-pressed="false">7 to 14</button>
+    </div>
+
+    <div id="service-list">
+      <details class="desplegable" data-ages="baby child older">
+        <summary>Vaccinations</summary>
+        <div class="cuerpo">
+          The official schedule plus any vaccine you bring from the pharmacy. We use cold spray,
+          sweet solution for infants and guided distraction for older children, then fifteen
+          minutes of observation before you leave.
+          <div class="meta"><span>20 min</span><span>Booking required</span><span>Bring the record card</span></div>
+        </div>
+      </details>
+
+      <details class="desplegable" data-ages="baby">
+        <summary>Newborn cord care and first baths</summary>
+        <div class="cuerpo">
+          At home or here, during the first two weeks. We check the cord, answer feeding questions
+          and go through the bath step by step with your baby rather than with a doll.
+          <div class="meta"><span>45 min</span><span>First two weeks</span></div>
+        </div>
+      </details>
+
+      <details class="desplegable" data-ages="baby child older">
+        <summary>Wound care and stitch removal</summary>
+        <div class="cuerpo">
+          Cleaning, dressings and follow up until discharge. Bring the emergency department report
+          if there is one. Stitch removal needs no appointment in the afternoon.
+          <div class="meta"><span>15 to 30 min</span><span>Afternoons without booking</span></div>
+        </div>
+      </details>
+
+      <details class="desplegable" data-ages="child older">
+        <summary>Blood draws</summary>
+        <div class="cuerpo">
+          Mornings only, 8:30 to 10:30, so the fasting window stays short. We work with anaesthetic
+          cream applied forty minutes beforehand, which we hand you at the previous visit.
+          <div class="meta"><span>15 min</span><span>8:30 to 10:30</span><span>Referral needed</span></div>
+        </div>
+      </details>
+
+      <details class="desplegable" data-ages="baby child older">
+        <summary>Growth and weight checks</summary>
+        <div class="cuerpo">
+          Measurement and plotting on the growth chart, with a paper copy for your paediatrician.
+          Useful between scheduled reviews when you want to follow the curve.
+          <div class="meta"><span>15 min</span><span>No referral</span></div>
+        </div>
+      </details>
+
+      <details class="desplegable" data-ages="child older">
+        <summary>Diabetes education</summary>
+        <div class="cuerpo">
+          Support after diagnosis: using the meter, rotating injection sites and packing the school
+          kit. Sessions with the family, and separately with the child when they are old enough.
+          <div class="meta"><span>60 min</span><span>Four session programme</span></div>
+        </div>
+      </details>
+    </div>
+
+    <p id="no-results" class="oculto">Nothing listed for that age group. Call us and we will sort it out.</p>
+  </section>
+
+  <!-- ===================== 4. CONTACT ET TARIFS ===================== -->
+  <section id="contact">
+    <h2>Contact and prices</h2>
+    <p>Prices are per session and include the follow up call. Health insurance reimbursement varies, ask us for an itemised receipt.</p>
+
+    <table class="tabla">
+      <thead>
+        <tr><th scope="col">Service</th><th scope="col">Length</th><th scope="col">Price</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>First visit and assessment</td><td>30 min</td><td>35 €</td></tr>
+        <tr><td>Vaccination</td><td>20 min</td><td>25 €</td></tr>
+        <tr><td>Wound care or stitch removal</td><td>15 to 30 min</td><td>28 €</td></tr>
+        <tr><td>Blood draw</td><td>15 min</td><td>30 €</td></tr>
+        <tr><td>Growth and weight check</td><td>15 min</td><td>20 €</td></tr>
+        <tr><td>Diabetes programme, four sessions</td><td>4 × 60 min</td><td>180 €</td></tr>
+      </tbody>
+    </table>
+
+    <div class="contacto">
+      <span>14 Olivar Street, Madrid</span>
+      <span>+34 910 00 00 00</span>
+      <span>hello@alondranursing.es</span>
+    </div>
+
+    <p style="margin-top:2rem"><strong>If this is an emergency, call us or go to A&amp;E. Do not use this form.</strong></p>
+
+    <form id="formulario" novalidate>
+      <div class="pareja">
+        <div class="campo">
+          <label for="tutor">Your name, parent or guardian</label>
+          <input type="text" id="tutor" name="tutor" autocomplete="name" required>
+        </div>
+        <div class="campo">
+          <label for="correo">Your email</label>
+          <input type="email" id="correo" name="correo" autocomplete="email" required>
+        </div>
+      </div>
+
+      <div class="pareja">
+        <div class="campo">
+          <label for="nombre">Child's name</label>
+          <input type="text" id="nombre" name="nombre" autocomplete="off" required>
+        </div>
+        <div class="campo">
+          <label for="edad">Age in years</label>
+          <input type="number" id="edad" name="edad" min="0" max="14" required>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="servicio">Service</label>
+        <select id="servicio" name="servicio" required>
+          <option value="">Choose one</option>
+          <option>Vaccinations</option>
+          <option>Newborn cord care and first baths</option>
+          <option>Wound care and stitch removal</option>
+          <option>Blood draws</option>
+          <option>Growth and weight checks</option>
+          <option>Diabetes education</option>
+        </select>
+      </div>
+
+      <div class="pareja">
+        <div class="campo">
+          <label for="fecha">Preferred day</label>
+          <input type="date" id="fecha" name="fecha" required>
+        </div>
+        <div class="campo">
+          <label for="telefono">Phone number</label>
+          <input type="tel" id="telefono" name="telefono" autocomplete="off" required>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="notas">Anything we should know</label>
+        <textarea id="notas" name="notas" placeholder="Allergies, fear of needles, how previous visits went..."></textarea>
+      </div>
+
+      <!-- Campo trampa. Una persona no lo ve, un robot lo rellena y descartamos el envío -->
+      <input class="trampa" type="checkbox" name="botcheck" tabindex="-1" autocomplete="off">
+
+      <!-- Aquí aparecen los avisos: domingo elegido, campos sin rellenar, errores de envío -->
+      <p class="aviso" id="aviso" role="status"></p>
+
+      <button type="submit">Request an appointment</button>
+    </form>
+
+    <!-- Se va rellenando mientras escribes -->
+    <div class="resumen" id="resumen" aria-live="polite"></div>
+  </section>
+
+  <!-- ===================== 5. ANNEXE ===================== -->
+  <section id="annexe">
+    <h2>Annexe</h2>
+    <p>Opening hours, common questions and the small print. The highlighted row is today, according to your device clock.</p>
+
+    <table class="tabla">
+      <thead>
+        <tr><th scope="col">Day</th><th scope="col">Hours</th></tr>
+      </thead>
+      <!-- data-dia sigue la numeración de JavaScript, 0 es domingo -->
+      <tbody id="tabla-horario">
+        <tr data-dia="1"><td>Monday</td><td>09:00 to 20:00</td></tr>
+        <tr data-dia="2"><td>Tuesday</td><td>09:00 to 20:00</td></tr>
+        <tr data-dia="3"><td>Wednesday</td><td>09:00 to 20:00</td></tr>
+        <tr data-dia="4"><td>Thursday</td><td>09:00 to 20:00</td></tr>
+        <tr data-dia="5"><td>Friday</td><td>09:00 to 20:00</td></tr>
+        <tr data-dia="6"><td>Saturday</td><td>10:00 to 14:00</td></tr>
+        <tr data-dia="0"><td>Sunday</td><td>Closed</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:2.5rem 0 1rem">Common questions</h3>
+
+    <details class="desplegable">
+      <summary>Do I need a referral?</summary>
+      <div class="cuerpo">Only for blood draws, where we need the requesting form. Everything else you can book directly.</div>
+    </details>
+
+    <details class="desplegable">
+      <summary>Can both parents come in?</summary>
+      <div class="cuerpo">Yes, and siblings too if that helps. The room fits four adults comfortably.</div>
+    </details>
+
+    <details class="desplegable">
+      <summary>What if my child refuses on the day?</summary>
+      <div class="cuerpo">We stop. You can rebook within the week at no extra cost, and we will talk through what to try differently.</div>
+    </details>
+
+    <details class="desplegable">
+      <summary>How do you handle my data?</summary>
+      <div class="cuerpo">The booking form sends your message to our inbox and nowhere else. Clinical notes stay on an encrypted local system and are never shared without written consent.</div>
+    </details>
+  </section>
+
+</main>
+
+<footer>
+  © 2026 Alondra Children's Nursing. Registered practice CS-00000, Community of Madrid.
+</footer>
+
+<script>
+/* ============================================================
+   1. ENLACE ACTIVO SEGÚN LA SECCIÓN VISIBLE
+   ============================================================ */
+const enlaces   = document.querySelectorAll('#menu a');
+const secciones = document.querySelectorAll('main section');
+
+const porId = new Map();
+enlaces.forEach(a => porId.set(a.getAttribute('href').slice(1), a));
+
+const observador = new IntersectionObserver((entradas) => {
+  entradas.forEach(entrada => {
+    if (!entrada.isIntersecting) return;
+    enlaces.forEach(a => a.classList.remove('activo'));
+    const activo = porId.get(entrada.target.id);
+    if (activo) activo.classList.add('activo');
+  });
+}, {
+  // La franja de detección empieza bajo la cabecera y acaba a media pantalla
+  rootMargin: '-100px 0px -55% 0px',
+  threshold: 0
+});
+secciones.forEach(s => observador.observe(s));
+
+
+/* ============================================================
+   2. ABIERTO O CERRADO AHORA MISMO
+   Horario en minutos desde medianoche, indexado por día de la
+   semana tal y como lo numera JavaScript: 0 domingo, 1 lunes...
+   ============================================================ */
+const HORARIO = {
+  0: null,                 // domingo cerrado
+  1: [9*60, 20*60],
+  2: [9*60, 20*60],
+  3: [9*60, 20*60],
+  4: [9*60, 20*60],
+  5: [9*60, 20*60],
+  6: [10*60, 14*60]        // sábado
+};
+
+const DIAS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+const cajaEstado  = document.getElementById('estado');
+const textoEstado = document.getElementById('estado-texto');
+
+function dosDigitos(n){ return String(n).padStart(2, '0'); }
+
+function aHora(minutos){
+  return dosDigitos(Math.floor(minutos / 60)) + ':' + dosDigitos(minutos % 60);
+}
+
+function revisarEstado(){
+  const ahora   = new Date();
+  const dia     = ahora.getDay();
+  const minutos = ahora.getHours() * 60 + ahora.getMinutes();
+  const tramo   = HORARIO[dia];
+
+  const abierto = tramo !== null && minutos >= tramo[0] && minutos < tramo[1];
+
+  cajaEstado.classList.toggle('abierto', abierto);
+  cajaEstado.classList.toggle('cerrado', !abierto);
+
+  if (abierto){
+    textoEstado.textContent = 'Open now, closing at ' + aHora(tramo[1]);
+  } else {
+    // Busca el siguiente día con horario, empezando por hoy si aún no ha abierto
+    let salto = (tramo !== null && minutos < tramo[0]) ? 0 : 1;
+    while (HORARIO[(dia + salto) % 7] === null) salto++;
+
+    const proximo = HORARIO[(dia + salto) % 7];
+    const cuando  = salto === 0 ? 'today'
+                  : salto === 1 ? 'tomorrow'
+                  : 'on ' + DIAS[(dia + salto) % 7];
+
+    textoEstado.textContent = 'Closed now, opening ' + cuando + ' at ' + aHora(proximo[0]);
+  }
+}
+
+revisarEstado();
+setInterval(revisarEstado, 60000);   // se refresca cada minuto
+
+
+/* ============================================================
+   3. FILA DE HOY EN LA TABLA DE HORARIOS
+   ============================================================ */
+const filaHoy = document.querySelector('#tabla-horario tr[data-dia="' + new Date().getDay() + '"]');
+if (filaHoy) filaHoy.classList.add('hoy');
+
+
+/* ============================================================
+   4. FILTRO DE SERVICIOS POR EDAD
+   Cada ficha lleva sus tramos en data-ages. Escondemos las que
+   no lo incluyan en lugar de volver a dibujar la lista.
+   ============================================================ */
+const botones   = document.querySelectorAll('#filtro button');
+const servicios = document.querySelectorAll('#service-list .desplegable');
+const sinNada   = document.getElementById('no-results');
+
+botones.forEach(boton => {
+  boton.addEventListener('click', () => {
+    const edad = boton.dataset.age;
+
+    // Solo un botón activo a la vez
+    botones.forEach(b => b.setAttribute('aria-pressed', String(b === boton)));
+
+    let visibles = 0;
+    servicios.forEach(ficha => {
+      const encaja = edad === 'all' || ficha.dataset.ages.split(' ').includes(edad);
+      ficha.classList.toggle('oculto', !encaja);
+      if (!encaja) ficha.open = false;   // si se esconde, que no quede abierta
+      if (encaja) visibles++;
+    });
+
+    sinNada.classList.toggle('oculto', visibles > 0);
+  });
+});
+
+
+/* ============================================================
+   5. FORMULARIO DE CITA
+
+   --- CONFIGURACIÓN DEL ENVÍO -------------------------------
+   Web3Forms recibe el formulario y te reenvía el correo a tu
+   buzón. Pega abajo tu access key, la que te llega al registrar
+   tu dirección en web3forms.com. La key es pública a propósito,
+   solo sirve para entregar en TU dirección.
+   ----------------------------------------------------------- */
+const ACCESS_KEY = 'PEGA_AQUI_TU_ACCESS_KEY';
+const BUZON      = 'consulta@gmail.com';   // solo para el enlace de respaldo
+
+const formulario = document.getElementById('formulario');
+const resumen    = document.getElementById('resumen');
+const aviso      = document.getElementById('aviso');
+const campoFecha = document.getElementById('fecha');
+const botonEnvio = formulario.querySelector('button[type="submit"]');
+
+// No se puede pedir cita para ayer
+const hoy = new Date();
+campoFecha.min = hoy.getFullYear() + '-' + dosDigitos(hoy.getMonth() + 1) + '-' + dosDigitos(hoy.getDate());
+
+/* Lee todos los campos de golpe y les quita los espacios sobrantes */
+function leerCampos(){
+  const d = Object.fromEntries(new FormData(formulario).entries());
+  Object.keys(d).forEach(k => { if (typeof d[k] === 'string') d[k] = d[k].trim(); });
+  return d;
+}
+
+/* 2026-10-20 se convierte en 20/10/2026 */
+function fechaCorta(iso){
+  if (!iso) return '';
+  const [a, m, d] = iso.split('-');
+  return d + '/' + m + '/' + a;
+}
+
+/* Convierte una fecha del input en objeto Date sin líos de huso horario */
+function aFecha(iso){
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+/* ESTE es el texto exacto que te llegará por correo */
+function construirMensaje(d){
+  return d.tutor + ' with phone: ' + d.telefono +
+         ' requests a consultation for ' + d.nombre + ', age ' + d.edad +
+         ', for ' + d.servicio + ' on ' + fechaCorta(d.fecha) +
+         '\n\n' + (d.notas || '(no message)');
+}
+
+function construirAsunto(d){ return 'consultation ' + d.correo; }
+
+/* --- Resumen en vivo mientras se escribe ------------------- */
+function pintarResumen(){
+  const d = leerCampos();
+
+  let fechaTexto = 'no date yet';
+  if (d.fecha){
+    fechaTexto = aFecha(d.fecha).toLocaleDateString('en-GB', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+  }
+
+  resumen.innerHTML =
+    'Requested by: <b>' + (d.tutor || 'no name yet') + '</b><br>' +
+    'Patient: <b>' + (d.nombre || 'no name yet') + (d.edad ? ', age ' + d.edad : '') + '</b><br>' +
+    'Service: <b>' + (d.servicio || 'not chosen yet') + '</b><br>' +
+    'Day: <b>' + fechaTexto + '</b><br>' +
+    'Contact: <b>' + (d.telefono || 'no phone yet') + ' · ' + (d.correo || 'no email yet') + '</b>';
+
+  // Aviso si cae en domingo, que es el día que cerramos
+  aviso.textContent = (d.fecha && HORARIO[aFecha(d.fecha).getDay()] === null)
+    ? 'We are closed that day, please pick another one.' : '';
+}
+
+formulario.addEventListener('input', pintarResumen);
+pintarResumen();   // deja el resumen escrito desde el primer momento
+
+/* --- Envío -------------------------------------------------
+   El navegador no puede mandar correo por su cuenta, así que
+   enviamos los datos a Web3Forms y ellos los entregan en tu
+   buzón, con el correo del cliente puesto como responder a.
+   ----------------------------------------------------------- */
+formulario.addEventListener('submit', async (evento) => {
+  evento.preventDefault();   // sin esto el navegador intentaría recargar la página
+
+  const d = leerCampos();
+
+  // 1. Campos obligatorios
+  const etiquetas = {
+    tutor: 'your name', correo: 'your email', nombre: "child's name",
+    edad: 'age', servicio: 'service', fecha: 'day', telefono: 'phone'
+  };
+  const faltan = Object.keys(etiquetas).filter(campo => !d[campo]);
+  if (faltan.length){
+    aviso.textContent = 'Missing: ' + faltan.map(c => etiquetas[c]).join(', ') + '.';
+    formulario.querySelector('#' + faltan[0]).focus();
+    return;
+  }
+
+  // 2. El correo tiene que parecer un correo
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.correo)){
+    aviso.textContent = 'Please check the email address.';
+    document.getElementById('correo').focus();
+    return;
+  }
+
+  // 3. Día cerrado
+  if (HORARIO[aFecha(d.fecha).getDay()] === null){
+    aviso.textContent = 'We are closed that day, please pick another one.';
+    campoFecha.focus();
+    return;
+  }
+
+  const asunto  = construirAsunto(d);
+  const mensaje = construirMensaje(d);
+
+  aviso.textContent = '';
+  botonEnvio.disabled = true;
+  botonEnvio.textContent = 'Sending...';
+
+  try {
+    const respuesta = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        access_key: ACCESS_KEY,
+        subject:    asunto,            // consultation client@gmail.com
+        from_name:  'Alondra website',
+        replyto:    d.correo,          // al responder, le respondes al cliente
+        botcheck:   !!d.botcheck,      // si viene marcado, es un robot
+        message:    mensaje            // el texto de arriba, tal cual
+      })
+    });
+
+    const datos = await respuesta.json();
+    if (!datos.success) throw new Error(datos.message || 'Rejected');
+
+    // Todo bien: el formulario desaparece y queda la confirmación
+    const confirmacion = document.createElement('div');
+    confirmacion.className = 'confirmacion';
+    confirmacion.textContent = 'Request sent. We will call you on ' + d.telefono +
+                               ' to confirm the exact time.';
+    formulario.replaceWith(confirmacion);
+    resumen.remove();
+
+  } catch (error){
+    // Plan B: abrir el correo del visitante con todo ya escrito
+    const enlace = 'mailto:' + BUZON +
+                   '?subject=' + encodeURIComponent(asunto) +
+                   '&body='    + encodeURIComponent(mensaje);
+    aviso.innerHTML = 'Could not send. ' +
+                      '<a href="' + enlace + '">Open it in your email app</a> or call +34 910 00 00 00.';
+    botonEnvio.disabled = false;
+    botonEnvio.textContent = 'Request an appointment';
+  }
+});
+</script>
